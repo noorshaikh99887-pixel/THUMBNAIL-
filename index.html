@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MEOW MEOW</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Black+Ops+One&family=Carter+One&family=Creepster&family=Fugaz+One&family=Luckiest+Guy&family=Orbitron:wght@400;700&family=Permanent+Marker&family=Rajdhani:wght@600;700&family=Russo+One&family=Teko:wght@500;700&family=Titan+One&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- FONTS --- */
+        @font-face { font-family: 'Amsterdam'; src: url('Amsterdam.ttf') format('truetype'); }
+        @font-face { font-family: 'Cortado'; src: url('Cortado-Script-Web-Regular.ttf') format('truetype'); }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #000000 100%);
+            color: white; margin: 0; padding: 0;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        /* --- PREVIEW --- */
+        .preview-container {
+            flex: 0 0 auto; width: 100%; background: #000; padding: 10px;
+            display: flex; justify-content: center; align-items: center;
+            border-bottom: 2px solid #00e5ff; z-index: 10;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+        canvas { max-height: 40vh; max-width: 100%; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.8); }
+
+        /* --- CONTROLS --- */
+        .controls-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; }
+
+        /* --- INPUTS --- */
+        .master-inputs {
+            display: grid; grid-template-columns: 0.4fr 1fr 1fr; gap: 10px;
+            background: #111; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px;
+        }
+        .input-group label { font-family: 'Teko'; color: #00e5ff; font-size: 1rem; display: block; margin-bottom: 3px; }
+        .master-input {
+            width: 100%; background: #222; border: 2px solid #444; color: #fff;
+            padding: 8px; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; font-size: 1rem;
+            resize: none; height: 50px; white-space: pre-wrap; overflow: hidden;
+        }
+        .master-input:focus { border-color: #00e5ff; background: #000; }
+
+        /* --- ACCORDION --- */
+        details { background: #16161a; border: 1px solid #333; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+        details[open] { border-color: #00e5ff; background: #1a1a20; }
+        summary {
+            padding: 15px; cursor: pointer; font-family: 'Black Ops One'; 
+            color: #aaa; display: flex; justify-content: space-between; align-items: center;
+            list-style: none; letter-spacing: 1px; font-size: 1.1rem;
+        }
+        details[open] summary { color: #00e5ff; border-bottom: 1px solid #333; }
+        .section-content { padding: 15px; }
+
+        /* --- SLIDERS --- */
+        .slider-group { margin-bottom: 20px; }
+        .slider-label { display: flex; justify-content: space-between; color: #ccc; font-weight: bold; font-size: 0.9rem; margin-bottom: 8px; }
+        .val-text { color: #00e5ff; font-family: 'Orbitron'; }
+
+        input[type=range] { 
+            -webkit-appearance: none; width: 100%; background: transparent; height: 40px; cursor: pointer;
+            touch-action: none; pointer-events: none; /* TRACK CLICK DISABLED */
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 14px; background: linear-gradient(90deg, #1a1a1d, #333);
+            border-radius: 7px; border: 1px solid #444;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            pointer-events: auto; /* THUMB DRAG ENABLED */
+            -webkit-appearance: none; height: 34px; width: 34px; border-radius: 50%; 
+            background: #00e5ff; margin-top: -11px; box-shadow: 0 0 15px #00e5ff; border: 3px solid #fff;
+        }
+
+        /* --- UI COMPONENTS --- */
+        .custom-select-wrapper { position: relative; width: 100%; margin-bottom: 15px; }
+        .custom-select__trigger {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px; background: #1a1a1d; border: 1px solid #333; border-radius: 8px;
+            color: white; font-weight: bold; cursor: pointer; font-family: 'Rajdhani'; font-size: 1.1rem;
+        }
+        .custom-select__options {
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+            background: #16161a; border: 1px solid #00e5ff; border-radius: 8px;
+            opacity: 0; visibility: hidden; transition: 0.2s; max-height: 250px; overflow-y: auto;
+            box-shadow: 0 10px 30px #000;
+        }
+        .custom-select-wrapper.open .custom-select__options { opacity: 1; visibility: visible; }
+        .custom-option { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; color: #ccc; }
+        .custom-option:hover { background: #222; color: #00e5ff; }
+
+        .color-group { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
+        .color-header { display: flex; justify-content: space-between; align-items: center; }
+        .color-preview { width: 60px; height: 35px; border: 2px solid #fff; border-radius: 6px; cursor: pointer; }
+        .rgb-mixer { display: none; margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; }
+        .rgb-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .rgb-label { width: 25px; font-weight: bold; font-family: 'Teko'; font-size: 1.2rem; }
+        
+        .rgb-slider { -webkit-appearance: none; height: 25px; flex: 1; touch-action: none; pointer-events: none; }
+        .rgb-slider::-webkit-slider-runnable-track { height: 8px; border: none; background: #333; border-radius: 4px; }
+        .rgb-slider::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -6px; background: #fff; border: none; pointer-events: auto; }
+        
+        .rgb-num { 
+            width: 50px; background: #222; border: 1px solid #444; color: #00e5ff; 
+            font-family: 'Rajdhani'; font-weight: bold; text-align: center; padding: 4px; border-radius: 4px;
+        }
+
+        .swatch-row { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
+        .swatch { width: 35px; height: 35px; border-radius: 8px; border: 2px solid #444; cursor: pointer; flex-shrink: 0; }
+
+        .btn-dl {
+            width: 100%; padding: 18px; background: linear-gradient(90deg, #00e5ff, #0088ff);
+            color: #000; border: none; font-family: 'Black Ops One'; font-size: 1.4rem;
+            border-radius: 12px; cursor: pointer; text-transform: uppercase; margin-top: 20px;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+        .btn-dl:active { transform: scale(0.95); } /* Button press effect */
+
+        .toggle-adv { color: #666; font-size: 0.9rem; text-align: center; cursor: pointer; width: 100%; display: block; margin-top: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .advanced-section { display: none; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="preview-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls-container">
+        
+        <div class="master-inputs">
+            <div class="input-group">
+                <label>Series</label>
+                <textarea class="master-input" id="seriesText" oninput="triggerRender()"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Insane</label>
+                <textarea class="master-input" id="topText" oninput="triggerRender()"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Clutch</label>
+                <textarea class="master-input" id="botText" oninput="triggerRender()"></textarea>
+            </div>
+        </div>
+
+        <details open>
+            <summary>SERIES SETTINGS</summary>
+            <div class="section-content">
+                <div class="custom-select-wrapper" id="seriesFontWrapper">
+                    <div class="custom-select__trigger"><span id="seriesFontName">Bangers</span> <span>▼</span></div>
+                    <div class="custom-select__options" id="seriesFontOptions"></div>
+                </div>
+                <div id="cp_series"></div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Size</span> <span class="val-text" id="val_ss"></span></div>
+                    <input type="range" id="ss" min="20" max="400" oninput="sync('ss', this.value)">
+                </div>
+                <span class="toggle-adv" onclick="toggleAdv('adv_series')">▼ Position</span>
+                <div class="advanced-section" id="adv_series">
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos X</span> <span class="val-text" id="val_sx"></span></div>
+                        <input type="range" id="sx" min="0" max="100" oninput="sync('sx', this.value)">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos Y</span> <span class="val-text" id="val_sy"></span></div>
+                        <input type="range" id="sy" min="0" max="100" oninput="sync('sy', this.value)">
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>TEXT 1</summary>
+            <div class="section-content">
+                <div class="custom-select-wrapper" id="topFontWrapper">
+                    <div class="custom-select__trigger"><span id="topFontName">Amsterdam</span> <span>▼</span></div>
+                    <div class="custom-select__options" id="topFontOptions"></div>
+                </div>
+                <div id="cp_top"></div>
+                <div id="cp_top_shadow"></div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Size</span> <span class="val-text" id="val_ts"></span></div>
+                    <input type="range" id="ts" min="20" max="500" oninput="sync('ts', this.value)">
+                </div>
+                <span class="toggle-adv" onclick="toggleAdv('adv_top')">▼ Position</span>
+                <div class="advanced-section" id="adv_top">
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos X</span> <span class="val-text" id="val_tx"></span></div>
+                        <input type="range" id="tx" min="0" max="100" oninput="sync('tx', this.value)">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos Y</span> <span class="val-text" id="val_ty"></span></div>
+                        <input type="range" id="ty" min="0" max="100" oninput="sync('ty', this.value)">
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>TEXT 2</summary>
+            <div class="section-content">
+                <div class="custom-select-wrapper" id="botFontWrapper">
+                    <div class="custom-select__trigger"><span id="botFontName">Cortado</span> <span>▼</span></div>
+                    <div class="custom-select__options" id="botFontOptions"></div>
+                </div>
+                <div id="cp_bot"></div>
+                <div id="cp_bot_shadow"></div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Size</span> <span class="val-text" id="val_bs"></span></div>
+                    <input type="range" id="bs" min="20" max="500" oninput="sync('bs', this.value)">
+                </div>
+                <span class="toggle-adv" onclick="toggleAdv('adv_bot')">▼ Position</span>
+                <div class="advanced-section" id="adv_bot">
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos X</span> <span class="val-text" id="val_bx"></span></div>
+                        <input type="range" id="bx" min="0" max="100" oninput="sync('bx', this.value)">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-label"><span>Pos Y</span> <span class="val-text" id="val_by"></span></div>
+                        <input type="range" id="by" min="0" max="100" oninput="sync('by', this.value)">
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>STROKE & THEME</summary>
+            <div class="section-content">
+                <div id="cp_stroke"></div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Stroke Width</span> <span class="val-text" id="val_stroke"></span></div>
+                    <input type="range" id="stroke" min="0" max="30" oninput="sync('stroke', this.value)">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Theme Hue</span> <span class="val-text" id="val_hue"></span></div>
+                    <input type="range" id="hue" min="0" max="360" oninput="sync('hue', this.value)">
+                </div>
+            </div>
+        </details>
+
+        <button class="btn-dl" onclick="downloadImg()">DOWNLOAD 4K</button>
+        <div style="height: 50px;"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const bgImg = new Image();
+        
+        // --- SOUND EFFECT ---
+        const clickSound = new Audio('noor.mp3'); 
+
+        // ---------------------------------------------------------
+        //     [ DEFAULTS SETTINGS: FINAL ]
+        // ---------------------------------------------------------
+
+        const config = {
+            // --- SERIES (#1) SETTINGS ---
+            series: { 
+                text: "#",
+                font: "Bangers", 
+                size: 190,  // Size 190
+                x: 96,      // X 96
+                y: 9,       // Y 9
+                color: {r:255,g:255,b:255} 
+            },
+
+            // --- INSANE (TEXT 1) SETTINGS ---
+            top: { 
+                text: "Insane",
+                font: "Amsterdam", 
+                size: 320,  // Size 320
+                x: 76,      // X 76
+                y: 37,      // Y 37
+                gap: 100, 
+                // COLOR: Lavender (203, 191, 255)
+                color: {r:203,g:191,b:255}, 
+                // SHADOW: Black (0, 0, 0)
+                shadow: {r:0,g:0,b:0} 
+            },
+
+            // --- CLUTCH (TEXT 2) SETTINGS ---
+            bot: { 
+                text: "CLUTCH",
+                font: "Cortado", 
+                size: 406,  // Size 406
+                x: 91,      // X 91
+                y: 51,      // Y 51
+                gap: 100, 
+                // COLOR: Light Yellow (255, 255, 174)
+                color: {r:255,g:255,b:174}, 
+                // SHADOW: Black (0, 0, 0)
+                shadow: {r:0,g:0,b:0} 
+            },
+
+            // --- GLOBAL SETTINGS ---
+            global: { 
+                stroke: 8, 
+                strokeColor: {r:0,g:0,b:0}, 
+                hue: 0 
+            }
+        };
+        // ---------------------------------------------------------
+
+        const fontList = [
+            { name: "Amsterdam", val: "Amsterdam" },
+            { name: "Cortado", val: "Cortado" },
+            { name: "Bangers", val: "Bangers" },
+            { name: "Orbitron", val: "Orbitron" },
+            { name: "Black Ops", val: "Black Ops One" },
+            { name: "Russo One", val: "Russo One" },
+            { name: "Titan One", val: "Titan One" },
+            { name: "Luckiest Guy", val: "Luckiest Guy" },
+            { name: "Permanent Marker", val: "Permanent Marker" }
+        ];
+
+        window.onload = function() {
+            bgImg.src = 'noor.jpg';
+            bgImg.onload = () => {
+                const aspect = bgImg.naturalHeight / bgImg.naturalWidth;
+                canvas.width = 1000;
+                canvas.height = 1000 * aspect;
+                document.fonts.load('10px "Amsterdam"').then(() => {
+                    document.fonts.load('10px "Cortado"').then(triggerRender);
+                });
+            };
+            initializeInputs();
+            setupUI();
+            
+            // --- NO JUMP LOGIC ---
+            document.querySelectorAll('input[type="range"]').forEach(range => {
+                let isDragging = false;
+                range.addEventListener('mousedown', (e) => isDragging = true);
+                range.addEventListener('touchstart', (e) => isDragging = true);
+                range.addEventListener('mouseup', (e) => isDragging = false);
+                range.addEventListener('touchend', (e) => isDragging = false);
+            });
+        };
+
+        function initializeInputs() {
+            document.getElementById('seriesText').value = config.series.text;
+            document.getElementById('topText').value = config.top.text;
+            document.getElementById('botText').value = config.bot.text;
+
+            updateSliderAndText('ss', config.series.size);
+            updateSliderAndText('sx', config.series.x);
+            updateSliderAndText('sy', config.series.y);
+            
+            updateSliderAndText('ts', config.top.size);
+            updateSliderAndText('tx', config.top.x);
+            updateSliderAndText('ty', config.top.y);
+            
+            updateSliderAndText('bs', config.bot.size);
+            updateSliderAndText('bx', config.bot.x);
+            updateSliderAndText('by', config.bot.y);
+            
+            updateSliderAndText('stroke', config.global.stroke);
+            updateSliderAndText('hue', config.global.hue);
+
+            document.getElementById('seriesFontName').innerText = config.series.font;
+            document.getElementById('topFontName').innerText = config.top.font;
+            document.getElementById('botFontName').innerText = config.bot.font;
+        }
+
+        function updateSliderAndText(id, val) {
+            const el = document.getElementById(id);
+            const disp = document.getElementById(`val_${id}`);
+            if(el) el.value = val;
+            if(disp) disp.innerText = val;
+        }
+
+        function setupUI() {
+            setupFontPicker('series', config.series);
+            setupFontPicker('top', config.top);
+            setupFontPicker('bot', config.bot);
+            setupColorPicker('cp_series', 'Series Color', config.series.color);
+            setupColorPicker('cp_top', 'Text Color', config.top.color);
+            setupColorPicker('cp_top_shadow', 'Shadow Color', config.top.shadow);
+            setupColorPicker('cp_bot', 'Text Color', config.bot.color);
+            setupColorPicker('cp_bot_shadow', 'Shadow Color', config.bot.shadow);
+            setupColorPicker('cp_stroke', 'Outline Color', config.global.strokeColor);
+        }
+
+        let isRendering = false;
+        function triggerRender() {
+            if (!isRendering) {
+                isRendering = true;
+                requestAnimationFrame(() => {
+                    draw(canvas);
+                    isRendering = false;
+                });
+            }
+        }
+
+        function draw(targetCanvas) {
+            const context = targetCanvas.getContext('2d');
+            const w = targetCanvas.width;
+            const h = targetCanvas.height;
+            context.clearRect(0, 0, w, h);
+            
+            const hue = document.getElementById('hue').value;
+            context.save();
+            context.filter = `hue-rotate(${hue}deg)`;
+            if(bgImg.complete) { context.drawImage(bgImg, 0, 0, w, h); } 
+            else { context.fillStyle="#111"; context.fillRect(0,0,w,h); }
+            context.restore();
+
+            config.series.text = document.getElementById('seriesText').value;
+            config.top.text = document.getElementById('topText').value;
+            config.bot.text = document.getElementById('botText').value;
+
+            drawMultiline(context, w, h, config.series.text, config.series, "right", false);
+            drawMultiline(context, w, h, config.top.text, config.top, "right", true);
+            drawMultiline(context, w, h, config.bot.text, config.bot, "right", true);
+        }
+
+        function drawMultiline(ctx, w, h, text, settings, align, useStroke) {
+            ctx.save();
+            const scale = w / 3840; 
+            ctx.font = `${settings.size * scale}px '${settings.font}'`;
+            ctx.textAlign = align;
+            ctx.textBaseline = "middle";
+
+            const fillColor = `rgb(${settings.color.r},${settings.color.g},${settings.color.b})`;
+            const shadowColor = settings.shadow ? `rgb(${settings.shadow.r},${settings.shadow.g},${settings.shadow.b})` : "rgba(0,0,0,0.8)";
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = 30 * scale;
+
+            const strokeW = config.global.stroke * scale;
+            if(useStroke && strokeW > 0) {
+                ctx.lineWidth = strokeW;
+                ctx.strokeStyle = `rgb(${config.global.strokeColor.r},${config.global.strokeColor.g},${config.global.strokeColor.b})`;
+            }
+
+            const startX = (w * settings.x) / 100;
+            const startY = (h * settings.y) / 100;
+            const lines = text.split('\n');
+            const lineGap = 100 * scale; 
+
+            lines.forEach((line, index) => {
+                const yPos = startY + (index * lineGap);
+                if(useStroke && strokeW > 0) ctx.strokeText(line, startX, yPos);
+                ctx.fillStyle = fillColor;
+                ctx.fillText(line, startX, yPos);
+            });
+            ctx.restore();
+        }
+
+        function downloadImg() {
+            // PLAY MUSIC (Funny Pew Pew)
+            clickSound.currentTime = 0;
+            clickSound.play();
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = bgImg.naturalWidth || 3840;
+            tempCanvas.height = bgImg.naturalHeight || 2160;
+            draw(tempCanvas);
+            const link = document.createElement('a');
+            link.download = 'thumbnail_4k.jpg';
+            link.href = tempCanvas.toDataURL('image/jpeg', 1.0);
+            link.click();
+            tempCanvas.remove();
+        }
+
+        function sync(id, val) {
+            document.getElementById(`val_${id}`).innerText = val;
+            
+            if(id === 'ss') config.series.size = parseInt(val);
+            if(id === 'sx') config.series.x = parseInt(val);
+            if(id === 'sy') config.series.y = parseInt(val);
+            
+            if(id === 'ts') config.top.size = parseInt(val);
+            if(id === 'tx') config.top.x = parseInt(val);
+            if(id === 'ty') config.top.y = parseInt(val);
+            
+            if(id === 'bs') config.bot.size = parseInt(val);
+            if(id === 'bx') config.bot.x = parseInt(val);
+            if(id === 'by') config.bot.y = parseInt(val);
+            
+            if(id === 'stroke') config.global.stroke = parseInt(val);
+            if(id === 'hue') config.global.hue = parseInt(val);
+            
+            triggerRender();
+        }
+
+        function setupFontPicker(idPrefix, configObj) {
+            const wrapper = document.getElementById(`${idPrefix}FontWrapper`);
+            const trigger = wrapper.querySelector('.custom-select__trigger span');
+            const options = document.getElementById(`${idPrefix}FontOptions`);
+            fontList.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'custom-option';
+                div.innerText = f.name;
+                div.style.fontFamily = f.val;
+                div.onclick = () => {
+                    configObj.font = f.val;
+                    trigger.innerText = f.name;
+                    wrapper.classList.remove('open');
+                    triggerRender();
+                };
+                options.appendChild(div);
+            });
+            wrapper.onclick = (e) => {
+                document.querySelectorAll('.custom-select-wrapper').forEach(el => {
+                    if(el !== wrapper) el.classList.remove('open');
+                });
+                wrapper.classList.toggle('open');
+                e.stopPropagation();
+            }
+        }
+
+        function setupColorPicker(divId, label, colorObj) {
+            const container = document.getElementById(divId);
+            const presets = [ {r:255,g:255,b:255}, {r:0,g:0,b:0}, {r:255,g:0,b:0}, {r:0,g:229,b:255}, {r:0,g:255,b:0}, {r:255,g:255,b:0}, {r:255,g:0,b:85} ];
+            const group = document.createElement('div'); group.className = 'color-group';
+            const header = document.createElement('div'); header.className = 'color-header';
+            header.innerHTML = `<label style="color:#ccc; font-family:'Teko'; font-size:1.1rem">${label}</label>`;
+            const preview = document.createElement('div'); preview.className = 'color-preview';
+            preview.style.backgroundColor = `rgb(${colorObj.r},${colorObj.g},${colorObj.b})`;
+            const mixer = document.createElement('div'); mixer.className = 'rgb-mixer';
+            
+            ['r','g','b'].forEach(ch => {
+                const row = document.createElement('div'); row.className = 'rgb-row';
+                const lbl = document.createElement('span'); lbl.className = 'rgb-label';
+                lbl.innerText = ch.toUpperCase(); lbl.style.color = ch==='r'?'#ff4444':(ch==='g'?'#00e5ff':'#4444ff');
+                
+                // Slider
+                const s = document.createElement('input'); s.type = 'range'; s.min=0; s.max=255; s.value = colorObj[ch];
+                s.className = 'rgb-slider'; s.dataset.ch=ch;
+                
+                // Number Box
+                const n = document.createElement('input'); n.type = 'number'; n.min=0; n.max=255; n.value = colorObj[ch];
+                n.className = 'rgb-num'; n.dataset.ch=ch;
+
+                // Event Logic
+                s.oninput = (e) => {
+                    let val = parseInt(e.target.value);
+                    n.value = val;
+                    colorObj[ch] = val;
+                    preview.style.backgroundColor = `rgb(${colorObj.r},${colorObj.g},${colorObj.b})`;
+                    triggerRender();
+                };
+
+                n.oninput = (e) => {
+                    let val = parseInt(e.target.value);
+                    if(val > 255) val = 255; if(val < 0) val = 0;
+                    s.value = val;
+                    colorObj[ch] = val;
+                    preview.style.backgroundColor = `rgb(${colorObj.r},${colorObj.g},${colorObj.b})`;
+                    triggerRender();
+                };
+
+                row.appendChild(lbl); row.appendChild(s); row.appendChild(n);
+                mixer.appendChild(row);
+            });
+
+            const swatches = document.createElement('div'); swatches.className = 'swatch-row';
+            presets.forEach(p => {
+                const sw = document.createElement('div'); sw.className = 'swatch';
+                sw.style.backgroundColor = `rgb(${p.r},${p.g},${p.b})`;
+                sw.onclick = () => { 
+                    colorObj.r=p.r; colorObj.g=p.g; colorObj.b=p.b; 
+                    preview.style.backgroundColor = `rgb(${p.r},${p.g},${p.b})`; 
+                    
+                    // Update Sliders and Numbers
+                    const inputs = mixer.querySelectorAll('input');
+                    inputs.forEach(i => i.value = colorObj[i.dataset.ch]);
+                    
+                    triggerRender(); 
+                };
+                swatches.appendChild(sw);
+            });
+
+            preview.onclick = () => { mixer.style.display = mixer.style.display==='block'?'none':'block'; }
+            header.appendChild(preview); group.appendChild(header); group.appendChild(mixer); group.appendChild(swatches); container.appendChild(group);
+        }
+
+        function toggleAdv(id) { const el = document.getElementById(id); el.style.display = el.style.display==='block'?'none':'block'; }
+        document.onclick = () => { document.querySelectorAll('.custom-select-wrapper').forEach(e => e.classList.remove('open')); }
+    </script>
+</body>
+</html>
